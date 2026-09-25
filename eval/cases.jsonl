@@ -1,0 +1,45 @@
+// Retrieval eval: corpus eval eval/cases.jsonl   (needs repos: grpc-go requests express ky ripgrep)
+{"q": "how are connection retries backed off", "expect": ["grpc-go:internal/backoff/backoff.go", "grpc-go:internal/xds/clients/internal/backoff/backoff.go"]}
+{"q": "where is the keepalive ping sent on the client transport", "expect": ["grpc-go:internal/transport/http2_client.go:1795"]}
+{"q": "how is a timeout encoded into the grpc-timeout header", "expect": ["grpc-go:internal/grpcutil/encode_duration.go"]}
+{"q": "how does the server stop gracefully waiting for pending RPCs", "expect": ["grpc-go:server.go:1683"]}
+{"q": "how are metadata headers attached to the outgoing context", "expect": ["grpc-go:metadata/metadata.go:243", "grpc-go:metadata/metadata.go:250"]}
+{"q": "how is gzip compression registered and implemented", "expect": ["grpc-go:encoding/gzip/gzip.go"]}
+{"q": "how does the dns resolver resolve and re-resolve addresses", "expect": ["grpc-go:internal/resolver/dns/dns_resolver.go"]}
+{"q": "how are unary client interceptors chained together", "expect": ["grpc-go:clientconn.go:518"]}
+{"q": "where is the maximum receive message size enforced", "expect": ["grpc-go:rpc_util.go:942", "grpc-go:rpc_util.go:906"]}
+{"q": "how does the health server report and update serving status", "expect": ["grpc-go:health/server.go"]}
+{"q": "weighted round robin picker choosing a backend", "expect": ["grpc-go:balancer/weightedroundrobin/balancer.go:456", "grpc-go:balancer/weightedroundrobin/scheduler.go"]}
+{"q": "NewClient", "expect": ["grpc-go:clientconn.go"]}
+{"q": "GracefulStop", "expect": ["grpc-go:server.go:1683"]}
+{"q": "how are redirects followed", "expect": ["requests:src/requests/sessions.py:186"]}
+{"q": "when is the authorization header stripped on redirect", "expect": ["requests:src/requests/sessions.py:154", "requests:src/requests/sessions.py:309"]}
+{"q": "how is the basic auth header encoded", "expect": ["requests:src/requests/auth.py:34"]}
+{"q": "digest authentication challenge response", "expect": ["requests:src/requests/auth.py"]}
+{"q": "how are proxies read from environment variables", "expect": ["requests:src/requests/utils.py:873", "requests:src/requests/utils.py"]}
+{"q": "how are session cookies merged with request cookies", "expect": ["requests:src/requests/cookies.py:604", "requests:src/requests/sessions.py"]}
+{"q": "guess the text encoding of a response body", "expect": ["requests:src/requests/models.py:897"]}
+{"q": "raise an exception for 4xx and 5xx status codes", "expect": ["requests:src/requests/models.py:1144"]}
+{"q": "iterate over the response body in chunks while streaming", "expect": ["requests:src/requests/models.py"]}
+{"q": "HTTPAdapter", "expect": ["requests:src/requests/adapters.py"]}
+{"q": "how does res.send set content type and etag", "expect": ["express:lib/response.js"]}
+{"q": "how does a redirect response work", "expect": ["express:lib/response.js"]}
+{"q": "how is the client ip determined when behind a trusted proxy", "expect": ["express:lib/request.js:340"]}
+{"q": "how is the query string parser chosen", "expect": ["express:lib/utils.js:162", "express:lib/utils.js:267"]}
+{"q": "how is a view template looked up and rendered", "expect": ["express:lib/application.js", "express:lib/view.js"]}
+{"q": "set a signed cookie on the response", "expect": ["express:lib/response.js"]}
+{"q": "how does express decide a request is fresh for 304 not modified", "expect": ["express:lib/request.js:469"]}
+{"q": "send a file with error handling", "expect": ["express:lib/response.js"]}
+{"q": "how does ky retry failed requests", "expect": ["ky:source/core/Ky.ts"]}
+{"q": "how is the request timeout implemented", "repo": "ky", "expect": ["ky:source/utils/timeout.ts", "ky:source/core/Ky.ts"]}
+{"q": "how are beforeRequest hooks executed", "repo": "ky", "expect": ["ky:source/core/Ky.ts"]}
+{"q": "how are headers and search params merged", "repo": "ky", "expect": ["ky:source/utils/merge.ts"]}
+{"q": "download progress reporting while reading the body", "repo": "ky", "expect": ["ky:source/utils/body.ts", "ky:source/core/Ky.ts"]}
+{"q": "HTTPError", "expect": ["ky:source/errors/HTTPError.ts"]}
+{"q": "how does ripgrep detect binary files", "expect": ["ripgrep:crates/searcher/src/line_buffer.rs", "ripgrep:crates/searcher/src/searcher/mod.rs", "ripgrep:crates/searcher/src/searcher/core.rs"]}
+{"q": "how are gitignore globs matched against paths", "expect": ["ripgrep:crates/ignore/src/gitignore.rs"]}
+{"q": "parallel directory traversal with worker threads", "expect": ["ripgrep:crates/ignore/src/walk.rs"]}
+{"q": "smart case: case insensitive unless the pattern has uppercase", "expect": ["ripgrep:crates/regex/src/config.rs", "ripgrep:crates/core/flags/defs.rs"]}
+{"q": "how are line numbers written in the standard printer", "expect": ["ripgrep:crates/printer/src/standard.rs"]}
+{"q": "when does the searcher use memory maps", "expect": ["ripgrep:crates/searcher/src/searcher/mmap.rs"]}
+{"q": "how is json lines output produced for matches", "expect": ["ripgrep:crates/printer/src/json.rs"]}
