@@ -17,13 +17,14 @@ import (
 const SchemaVersion = 1
 
 type Repo struct {
-	Name      string    `json:"name"`
-	URL       string    `json:"url"`
-	Ref       string    `json:"ref"`    // branch, tag or commit being tracked
-	Pinned    bool      `json:"pinned"` // tag or commit: update is a no-op
-	SHA       string    `json:"sha"`
-	AddedAt   time.Time `json:"added_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Name       string    `json:"name"`
+	URL        string    `json:"url"`
+	Ref        string    `json:"ref"`    // branch, tag or commit being tracked
+	Pinned     bool      `json:"pinned"` // tag or commit: update is a no-op
+	SHA        string    `json:"sha"`
+	Categories []string  `json:"categories,omitempty"`
+	AddedAt    time.Time `json:"added_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type Manifest struct {
@@ -156,6 +157,63 @@ func (m *Manifest) Resolve(q string) (*Repo, error) {
 		return nil, xerr.New(xerr.NotFound, "use one of: "+strings.Join(names, ", "), "repo %q is ambiguous", q)
 	}
 	return nil, xerr.New(xerr.NotFound, "corpus list  (or corpus add <owner/repo>)", "repo %q not found", q)
+}
+
+// Tag adds (or with remove, drops) categories on a repo. Returns false if the repo is unknown.
+func (m *Manifest) Tag(name string, cats []string, remove bool) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, r := range m.Repos {
+		if r.Name != name {
+			continue
+		}
+		set := map[string]bool{}
+		for _, c := range r.Categories {
+			set[c] = true
+		}
+		for _, c := range cats {
+			set[c] = !remove
+		}
+		r.Categories = r.Categories[:0]
+		for c, on := range set {
+			if on {
+				r.Categories = append(r.Categories, c)
+			}
+		}
+		sort.Strings(r.Categories)
+		return true
+	}
+	return false
+}
+
+// InCategory returns repo names carrying category cat.
+func (m *Manifest) InCategory(cat string) []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []string
+	for _, r := range m.Repos {
+		for _, c := range r.Categories {
+			if c == cat {
+				out = append(out, r.Name)
+				break
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// Categories returns every category with its repo count.
+func (m *Manifest) Categories() map[string]int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := map[string]int{}
+	for _, r := range m.Repos {
+		for _, c := range r.Categories {
+			out[c]++
+		}
+	}
+	return out
 }
 
 func normURL(u string) string {

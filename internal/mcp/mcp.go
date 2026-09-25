@@ -66,6 +66,7 @@ var tools = []*tool{
 		InputSchema: obj(map[string]any{
 			"query":     str("natural-language question, identifier, quoted exact string, or regex"),
 			"repo":      strs("limit to these repos (names from corpus_list)"),
+			"category":  strs("limit to repos in these categories (from corpus_categories)"),
 			"lang":      strs("limit to languages, e.g. go, python, typescript"),
 			"path":      str("path filter: glob like 'internal/*' or a substring"),
 			"mode":      map[string]any{"type": "string", "enum": []string{"auto", "concept", "symbol", "exact", "regex"}, "description": "default auto"},
@@ -74,7 +75,7 @@ var tools = []*tool{
 			"no_rerank": boolean("skip the relevance model; keyword ranking only"),
 		}, "query"),
 		run: func(ctx context.Context, a *app.App, m map[string]any) (interface{ Text() string }, error) {
-			return a.Search(ctx, app.SearchArgs{Query: s(m, "query"), Mode: s(m, "mode"), Repos: ss(m, "repo"),
+			return a.Search(ctx, app.SearchArgs{Query: s(m, "query"), Mode: s(m, "mode"), Repos: ss(m, "repo"), Categories: ss(m, "category"),
 				Langs: ss(m, "lang"), Path: s(m, "path"), Limit: n(m, "limit"), Deep: b(m, "deep"), NoRerank: b(m, "no_rerank")})
 		}},
 	{Name: "corpus_def",
@@ -96,16 +97,22 @@ var tools = []*tool{
 			return a.Tree(s(m, "repo"), s(m, "path"), n(m, "depth"))
 		}},
 	{Name: "corpus_list",
-		Description: "List repos in the corpus with ref, commit, size and languages.",
+		Description: "List repos in the corpus with ref, commit, size, languages and categories.",
+		InputSchema: obj(map[string]any{"category": strs("only repos in these categories")}),
+		run: func(ctx context.Context, a *app.App, m map[string]any) (interface{ Text() string }, error) {
+			return a.List(ss(m, "category"))
+		}},
+	{Name: "corpus_categories",
+		Description: "List categories (e.g. ai-harness, web-framework, database) and the repos in each. Use a category to scope corpus_search.",
 		InputSchema: obj(map[string]any{}),
 		run: func(ctx context.Context, a *app.App, m map[string]any) (interface{ Text() string }, error) {
-			return a.List()
+			return a.CategoriesList()
 		}},
 	{Name: "corpus_add",
 		Description: "Onboard GitHub repos into the corpus (shallow clone + index). Sources: owner/repo, owner/repo@tag, or URLs. Idempotent. Large repos can take a minute.",
-		InputSchema: obj(map[string]any{"sources": strs("repos to add")}, "sources"),
+		InputSchema: obj(map[string]any{"sources": strs("repos to add"), "category": strs("categories to put them in")}, "sources"),
 		run: func(ctx context.Context, a *app.App, m map[string]any) (interface{ Text() string }, error) {
-			return a.Add(ss(m, "sources"), "")
+			return a.Add(ss(m, "sources"), "", ss(m, "category"))
 		}},
 	{Name: "corpus_update",
 		Description: "Fetch the latest commits for repos (all when repos is empty) and re-index changed files.",

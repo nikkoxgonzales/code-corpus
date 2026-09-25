@@ -12,16 +12,17 @@ import (
 )
 
 type SearchArgs struct {
-	Query    string
-	Mode     string
-	Repos    []string
-	Langs    []string
-	Path     string
-	Limit    int
-	Budget   int
-	Lines    int
-	NoRerank bool
-	Deep     bool
+	Query      string
+	Mode       string
+	Repos      []string
+	Categories []string
+	Langs      []string
+	Path       string
+	Limit      int
+	Budget     int
+	Lines      int
+	NoRerank   bool
+	Deep       bool
 }
 
 func (a *App) Search(ctx context.Context, s SearchArgs) (*search.Result, error) {
@@ -52,6 +53,15 @@ func (a *App) Search(ctx context.Context, s SearchArgs) (*search.Result, error) 
 	if err != nil {
 		return nil, err
 	}
+	cats, err := ParseCategories(s.Categories)
+	if err != nil {
+		return nil, err
+	}
+	catRepos, err := a.CategoryRepos(cats)
+	if err != nil {
+		return nil, err
+	}
+	repos = append(repos, catRepos...)
 	e, err := a.Engine()
 	if err != nil {
 		return nil, err

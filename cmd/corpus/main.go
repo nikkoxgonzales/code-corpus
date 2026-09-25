@@ -62,7 +62,7 @@ type command struct {
 }
 
 var aliases = map[string]string{
-	"r": "repo", "l": "lang", "p": "path", "n": "limit", "m": "mode", "d": "depth", "c": "context", "j": "json",
+	"r": "repo", "C": "category", "l": "lang", "p": "path", "n": "limit", "m": "mode", "d": "depth", "c": "context", "j": "json",
 }
 
 var global = []string{"json"}
@@ -72,12 +72,30 @@ var commands []*command
 
 func init() {
 	commands = []*command{
-		{name: "add", usage: "corpus add <owner/repo|url>[@ref] ... [--name N]",
-			summary: "clone repos into references/ and index them (idempotent)",
-			values:  []string{"name"},
+		{name: "add", usage: "corpus add <owner/repo|url>[@ref] ... [--name N] [--category C]",
+			summary: "clone repos into references/ and index them (idempotent; --category also tags existing repos)",
+			values:  []string{"name", "category"},
 			run: func(a *app.App, c *call) (result, error) {
-				return a.Add(c.pos, c.str("name"))
+				return a.Add(c.pos, c.str("name"), c.list("category"))
 			}},
+		{name: "tag", usage: "corpus tag <category[,category]> <repo> ...",
+			summary: "put repos in categories",
+			run: func(a *app.App, c *call) (result, error) {
+				if len(c.pos) < 2 {
+					return nil, xerr.New(xerr.User, "corpus tag web-framework express", "tag takes a category and repos")
+				}
+				return a.Tag(c.pos[:1], c.pos[1:], false)
+			}},
+		{name: "untag", usage: "corpus untag <category[,category]> <repo> ...",
+			summary: "take repos out of categories",
+			run: func(a *app.App, c *call) (result, error) {
+				if len(c.pos) < 2 {
+					return nil, xerr.New(xerr.User, "corpus untag web-framework express", "untag takes a category and repos")
+				}
+				return a.Tag(c.pos[:1], c.pos[1:], true)
+			}},
+		{name: "categories", usage: "corpus categories", summary: "list categories and their repos",
+			run: func(a *app.App, c *call) (result, error) { return a.CategoriesList() }},
 		{name: "update", usage: "corpus update [repo ...]",
 			summary: "fetch latest commits (all repos by default) and re-index changed files",
 			run: func(a *app.App, c *call) (result, error) {
@@ -88,20 +106,21 @@ func init() {
 			run: func(a *app.App, c *call) (result, error) {
 				return a.Remove(c.pos)
 			}},
-		{name: "list", usage: "corpus list", summary: "list onboarded repos",
-			run: func(a *app.App, c *call) (result, error) { return a.List() }},
+		{name: "list", usage: "corpus list [--category C]", summary: "list onboarded repos",
+			values: []string{"category"},
+			run:    func(a *app.App, c *call) (result, error) { return a.List(c.list("category")) }},
 		{name: "status", usage: "corpus status", summary: "check tools, reranker and index health; prints fixes",
 			run: func(a *app.App, c *call) (result, error) { return a.Status() }},
 		{name: "reindex", usage: "corpus reindex [repo ...]", summary: "rebuild the index from the checkouts",
 			run: func(a *app.App, c *call) (result, error) { return a.Reindex(c.pos) }},
-		{name: "search", usage: `corpus search "<query>" [--repo R] [--lang L] [--path GLOB] [--mode auto|concept|symbol|exact|regex] [--limit N] [--deep] [--no-rerank] [--budget BYTES] [--lines N]`,
+		{name: "search", usage: `corpus search "<query>" [--repo R] [--category C] [--lang L] [--path GLOB] [--mode auto|concept|symbol|exact|regex] [--limit N] [--deep] [--no-rerank] [--budget BYTES] [--lines N]`,
 			summary: "search the corpus (see: corpus guide)",
 			bools:   []string{"deep", "no-rerank"},
-			values:  []string{"repo", "lang", "path", "mode", "limit", "budget", "lines"},
+			values:  []string{"repo", "category", "lang", "path", "mode", "limit", "budget", "lines"},
 			run:     runSearch("")},
-		{name: "def", usage: "corpus def <symbol> [--repo R] [--lang L] [--limit N]",
+		{name: "def", usage: "corpus def <symbol> [--repo R] [--category C] [--lang L] [--limit N]",
 			summary: "find where a symbol is defined",
-			values:  []string{"repo", "lang", "path", "limit", "lines"},
+			values:  []string{"repo", "category", "lang", "path", "limit", "lines"},
 			run:     runSearch("symbol")},
 		{name: "show", usage: "corpus show <repo>:<path>[:<start>[-<end>]] [--context N]",
 			summary: "print file lines with line numbers",
@@ -161,7 +180,7 @@ func runSearch(forced string) func(a *app.App, c *call) (result, error) {
 			mode = forced
 		}
 		return a.Search(c.ctx, app.SearchArgs{
-			Query: strings.Join(c.pos, " "), Mode: mode, Repos: c.list("repo"), Langs: c.list("lang"),
+			Query: strings.Join(c.pos, " "), Mode: mode, Repos: c.list("repo"), Categories: c.list("category"), Langs: c.list("lang"),
 			Path: c.str("path"), Limit: nums[0], Budget: nums[1], Lines: nums[2],
 			NoRerank: c.has("no-rerank"), Deep: c.has("deep"),
 		})

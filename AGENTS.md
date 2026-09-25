@@ -4,8 +4,8 @@
 to learn how a library or project *actually* implements something instead of guessing.
 
 ## Workflow
-1. `corpus list` — see what is onboarded.
-2. `corpus add owner/repo` — onboard (shallow clone + index). Also: `owner/repo@v1.2.0`, full URLs, several at once.
+1. `corpus categories` — see the shelves (ai-harness, web-framework, database, ...); `corpus list [--category C]` for repos.
+2. `corpus add owner/repo --category C` — onboard (shallow clone + index). Also: `owner/repo@v1.2.0`, full URLs, several at once.
 3. `corpus search "<question or identifier>"` — find code. Add `--repo name` to scope.
 4. `corpus show repo:path:start-end` — read exact lines. Every hit prints a location in this format.
 5. `corpus update` — pull latest for all repos (only changed files are re-indexed).
@@ -19,7 +19,7 @@ to learn how a library or project *actually* implements something instead of gue
 Auto picks: identifier -> symbol (falls back to exact), short regex -> regex, otherwise concept.
 
 ## Filters and size
-`--repo a,b`  `--lang go`  `--path "internal/*"` (no wildcard = substring)  `--limit N`
+`--repo a,b`  `--category web-framework,database` (`-C`)  `--lang go`  `--path "internal/*"` (no wildcard = substring)  `--limit N`
 `--deep` judges 60 candidates instead of 30. `--no-rerank` stays fully local.
 Output is capped (~8 KB, `--budget`); later hits then show location only.
 
@@ -38,7 +38,7 @@ Output is capped (~8 KB, `--budget`); later hits then show location only.
 - `# next:` is the most useful follow-up command. Errors print `error ... (fix: ...)`.
 
 ## Other commands
-`corpus tree repo [dir] [--depth N]` layout overview · `corpus def Name` · `corpus status` health + fixes ·
+`corpus tree repo [dir] [--depth N]` layout overview · `corpus tag <category> <repo>...` / `corpus untag` · `corpus def Name` · `corpus status` health + fixes ·
 `corpus reindex [repo]` · `corpus remove <exact-name>` · `corpus mcp` MCP server (same tools).
 Every command takes `--json` (stable schema, `schema_version`). Exit codes: 0 ok, 1 usage, 2 not found, 3 network, 4 partial.
 

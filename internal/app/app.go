@@ -176,7 +176,11 @@ type AddResult struct {
 	Next  string     `json:"next,omitempty"`
 }
 
-func (a *App) Add(sources []string, name string) (*AddResult, error) {
+func (a *App) Add(sources []string, name string, categories []string) (*AddResult, error) {
+	cats, err := ParseCategories(categories)
+	if err != nil {
+		return nil, err
+	}
 	if len(sources) == 0 {
 		return nil, xerr.New(xerr.User, "corpus add owner/repo [owner/repo@tag ...]", "no source given")
 	}
@@ -213,6 +217,7 @@ func (a *App) Add(sources []string, name string) (*AddResult, error) {
 			}
 			if ex := a.M.ByURL(url); ex != nil {
 				it.Status, it.Name, it.Ref, it.SHA = "exists", ex.Name, ex.Ref, ex.SHA
+				a.M.Tag(ex.Name, cats, false)
 				return
 			}
 			mu.Lock()
@@ -256,6 +261,7 @@ func (a *App) Add(sources []string, name string) (*AddResult, error) {
 			}
 			now := time.Now().UTC().Truncate(time.Second)
 			a.M.Put(&manifest.Repo{Name: n, URL: url, Ref: tracked, Pinned: pinned, SHA: sha, AddedAt: now, UpdatedAt: now})
+			a.M.Tag(n, cats, false)
 			it.Status, it.Ref, it.SHA, it.Files, it.Chunks = "added", tracked, sha, st.Files, st.Chunks
 			it.Seconds = round1(time.Since(t0).Seconds())
 		}()
@@ -514,15 +520,16 @@ func removeAll(dir string) error {
 // ---- list ----
 
 type ListItem struct {
-	Name      string    `json:"name"`
-	URL       string    `json:"url"`
-	Ref       string    `json:"ref"`
-	Pinned    bool      `json:"pinned"`
-	SHA       string    `json:"sha"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Files     int       `json:"files"`
-	Chunks    int       `json:"chunks"`
-	Langs     []string  `json:"langs"`
+	Name       string    `json:"name"`
+	URL        string    `json:"url"`
+	Ref        string    `json:"ref"`
+	Pinned     bool      `json:"pinned"`
+	SHA        string    `json:"sha"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Files      int       `json:"files"`
+	Chunks     int       `json:"chunks"`
+	Langs      []string  `json:"langs"`
+	Categories []string  `json:"categories"`
 }
 
 type ListResult struct {
@@ -530,7 +537,22 @@ type ListResult struct {
 	Repos []*ListItem `json:"repos"`
 }
 
-func (a *App) List() (*ListResult, error) {
+func (a *App) List(categories []string) (*ListResult, error) {
+	cats, err := ParseCategories(categories)
+	if err != nil {
+		return nil, err
+	}
+	var only map[string]bool
+	if len(cats) > 0 {
+		names, err := a.CategoryRepos(cats)
+		if err != nil {
+			return nil, err
+		}
+		only = map[string]bool{}
+		for _, n := range names {
+			only[n] = true
+		}
+	}
 	db, err := a.DB()
 	if err != nil {
 		return nil, err
@@ -541,8 +563,11 @@ func (a *App) List() (*ListResult, error) {
 	}
 	res := &ListResult{Root: a.RefDir, Repos: []*ListItem{}}
 	for _, n := range a.M.Names() {
+		if only != nil && !only[n] {
+			continue
+		}
 		r := a.M.Get(n)
-		it := &ListItem{Name: r.Name, URL: r.URL, Ref: r.Ref, Pinned: r.Pinned, SHA: r.SHA, UpdatedAt: r.UpdatedAt, Langs: []string{}}
+		it := &ListItem{Categories: append([]string{}, r.Categories...), Name: r.Name, URL: r.URL, Ref: r.Ref, Pinned: r.Pinned, SHA: r.SHA, UpdatedAt: r.UpdatedAt, Langs: []string{}}
 		if s := stats[n]; s != nil {
 			it.Files, it.Chunks, it.Langs = s.Files, s.Chunks, s.Langs
 		}

@@ -73,8 +73,12 @@ func (r *ListResult) Text() string {
 		if it.Pinned {
 			ref += "(pinned)"
 		}
-		fmt.Fprintf(tw, "%s\t%s@%s\t%s\t%d files\t%d chunks\t%s\t%s\n", it.Name, ref, short(it.SHA),
-			it.UpdatedAt.Format("2006-01-02"), it.Files, it.Chunks, strings.Join(it.Langs, ","), it.URL)
+		cats := strings.Join(it.Categories, ",")
+		if cats == "" {
+			cats = "-"
+		}
+		fmt.Fprintf(tw, "%s\t%s@%s\t%s\t%d files\t%d chunks\t%s\t[%s]\t%s\n", it.Name, ref, short(it.SHA),
+			it.UpdatedAt.Format("2006-01-02"), it.Files, it.Chunks, strings.Join(it.Langs, ","), cats, it.URL)
 	}
 	tw.Flush()
 	return b.String()
